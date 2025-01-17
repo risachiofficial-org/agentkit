@@ -6,7 +6,6 @@
     "cdp-langchain/typescript",
     "twitter-langchain/typescript"
   ],
-  "packageManager": "npm@8.9.0",
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
@@ -36,6 +35,7 @@
     "langchain"
   ],
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.12.11",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
