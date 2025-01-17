@@ -1,4 +1,5 @@
 import { CdpAction, CdpActionSchemaAny } from "./cdp_action";
+import { AddressReputationAction } from "./address_reputation";
 import { DeployNftAction } from "./deploy_nft";
 import { DeployTokenAction } from "./deploy_token";
 import { GetBalanceAction } from "./get_balance";
@@ -21,6 +22,7 @@ import { WOW_ACTIONS } from "./defi/wow";
  */
 export function getAllCdpActions(): CdpAction<CdpActionSchemaAny>[] {
   return [
+    new AddressReputationAction(),
     new GetWalletDetailsAction(),
     new DeployNftAction(),
     new DeployTokenAction(),
@@ -41,6 +43,7 @@ export const CDP_ACTIONS = getAllCdpActions().concat(WOW_ACTIONS);
 export {
   CdpAction,
   CdpActionSchemaAny,
+  AddressReputationAction,
   GetWalletDetailsAction,
   DeployNftAction,
   DeployTokenAction,
