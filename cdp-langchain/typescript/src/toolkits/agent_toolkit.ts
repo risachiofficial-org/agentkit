@@ -1,6 +1,6 @@
 import { StructuredToolInterface, BaseToolkit as Toolkit } from "@langchain/core/tools";
-import { CDP_ACTIONS, CdpAgentkit } from "@coinbase/cdp-agentkit-core";
-import { CdpTool } from "../tools/cdp_tool";
+import { Agentkit, AGENTKIT_ACTIONS } from "@0xgas/agentkit-core";
+import { AgentkitTool } from "../tools/agentkit_tool";
 
 /**
  * Coinbase Developer Platform (CDP) Toolkit.
@@ -44,7 +44,7 @@ import { CdpTool } from "../tools/cdp_tool";
  * // - wrap_eth
  * ```
  */
-export class CdpToolkit extends Toolkit {
+export class AgentkitToolkit extends Toolkit {
   tools: StructuredToolInterface[];
 
   /**
@@ -52,10 +52,10 @@ export class CdpToolkit extends Toolkit {
    *
    * @param agentkit - CDP agentkit instance
    */
-  constructor(agentkit: CdpAgentkit) {
+  constructor(agentkit: Agentkit) {
     super();
     // const actions = CDP_ACTIONS;
     // const tools = actions.map(action => new CdpTool(action, agentkit));
-    this.tools = CDP_ACTIONS.map(action => new CdpTool(action, agentkit));
+    this.tools = AGENTKIT_ACTIONS.map(action => new AgentkitTool(action, agentkit));
   }
 }

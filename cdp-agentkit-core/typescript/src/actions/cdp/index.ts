@@ -1,7 +1,7 @@
 import { CdpAction, CdpActionSchemaAny } from "./cdp_action";
 import { DeployNftAction } from "./deploy_nft";
 import { DeployTokenAction } from "./deploy_token";
-import { GetBalanceAction } from "./get_balance";
+import { GetCDPBalanceAction } from "./get_balance";
 import { GetBalanceNftAction } from "./get_balance_nft";
 import { GetWalletDetailsAction } from "./get_wallet_details";
 import { MintNftAction } from "./mint_nft";
@@ -25,7 +25,7 @@ export function getAllCdpActions(): CdpAction<CdpActionSchemaAny>[] {
     new GetWalletDetailsAction(),
     new DeployNftAction(),
     new DeployTokenAction(),
-    new GetBalanceAction(),
+    new GetCDPBalanceAction(),
     new GetBalanceNftAction(),
     new MintNftAction(),
     new RegisterBasenameAction(),
@@ -45,7 +45,7 @@ export {
   GetWalletDetailsAction,
   DeployNftAction,
   DeployTokenAction,
-  GetBalanceAction,
+  GetCDPBalanceAction,
   GetBalanceNftAction,
   MintNftAction,
   RegisterBasenameAction,

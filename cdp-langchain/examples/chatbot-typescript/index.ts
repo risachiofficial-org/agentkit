@@ -1,5 +1,5 @@
-import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
-import { CdpToolkit } from "@coinbase/cdp-langchain";
+import { Agentkit } from "@0xgas/agentkit-core";
+import { AgentkitToolkit } from "@0xgas/langchain";
 import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
@@ -10,28 +10,23 @@ import * as readline from "readline";
 
 dotenv.config();
 
-/**
- * Validates that required environment variables are set
- *
- * @throws {Error} - If required environment variables are missing
- * @returns {void}
- */
 function validateEnvironment(): void {
   const missingVars: string[] = [];
 
-  // Check required variables
   const requiredVars = [
     "OPENROUTER_API_KEY",
-    "CDP_API_KEY_NAME",
-    "CDP_API_KEY_PRIVATE_KEY"
+    "PRIVATE_KEY",
+    "RPC_URL",
+    "PAYMASTER_URL",
+    "BUNDLER_URL"
   ];
+  
   requiredVars.forEach(varName => {
     if (!process.env[varName]) {
       missingVars.push(varName);
     }
   });
 
-  // Exit if any required variables are missing
   if (missingVars.length > 0) {
     console.error("Error: Required environment variables are not set");
     missingVars.forEach(varName => {
@@ -40,79 +35,65 @@ function validateEnvironment(): void {
     process.exit(1);
   }
 
-  // Warn about optional NETWORK_ID
-  if (!process.env.NETWORK_ID) {
-    console.warn("Warning: NETWORK_ID not set, defaulting to base-sepolia testnet");
+  if (!process.env.CHAIN_ID) {
+    console.warn("Warning: CHAIN_ID not set, defaulting to base-sepolia");
   }
 }
 
-// Add this right after imports and before any other code
 validateEnvironment();
 
-// Configure a file to persist the agent's CDP MPC Wallet Data
 const WALLET_DATA_FILE = "wallet_data.txt";
 
-/**
- * Initialize the agent with CDP Agentkit
- *
- * @returns Agent executor and config
- */
 async function initializeAgent() {
   try {
-    // Initialize LLM
     const llm = new ChatOpenAI({
-      model: "gpt-4o-mini",
+      model: "gpt-4",
       openAIApiKey: process.env.OPENROUTER_API_KEY,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1"
       }
     });
 
-    let walletDataStr: string | null = null;
+    let walletDataStr: string | undefined = undefined;
 
-    // Read existing wallet data if available
     if (fs.existsSync(WALLET_DATA_FILE)) {
       try {
         walletDataStr = fs.readFileSync(WALLET_DATA_FILE, "utf8");
       } catch (error) {
         console.error("Error reading wallet data:", error);
-        // Continue without wallet data
       }
     }
 
-    // Configure CDP AgentKit
+    // Configure 0xGasless AgentKit
     const config = {
-      cdpWalletData: walletDataStr || undefined,
-      networkId: process.env.NETWORK_ID || "base-sepolia",
+      privateKey: process.env.PRIVATE_KEY as `0x${string}`,
+      rpcUrl: process.env.RPC_URL,
+      paymasterUrl: process.env.PAYMASTER_URL,
+      bundlerUrl: process.env.BUNDLER_URL,
+      chainId: Number(process.env.CHAIN_ID) || 84532, // Base Sepolia
+      walletData: walletDataStr
     };
 
-    // Initialize CDP AgentKit
-    const agentkit = await CdpAgentkit.configureWithWallet(config);
+    // Initialize 0xGasless AgentKit
+    const agentkit = await Agentkit.configureWithWallet(config);
 
-    // Initialize CDP AgentKit Toolkit and get tools
-    const cdpToolkit = new CdpToolkit(agentkit);
-    const tools = cdpToolkit.getTools();
+    // Initialize AgentKit Toolkit and get tools
+    const agentkitToolkit = new AgentkitToolkit(agentkit);
+    const tools = agentkitToolkit.getTools();
 
-    // Store buffered conversation history in memory
     const memory = new MemorySaver();
-    const agentConfig = { configurable: { thread_id: "CDP AgentKit Chatbot Example!" } };
+    const agentConfig = { configurable: { thread_id: "0xGasless AgentKit Chatbot Example!" } };
 
-    // Create React Agent using the LLM and CDP AgentKit tools
     const agent = createReactAgent({
       llm,
       tools,
       checkpointSaver: memory,
       messageModifier: `
-        You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are 
-        empowered to interact onchain using your tools. If you ever need funds, you can request them from the 
-        faucet if you are on network ID 'base-sepolia'. If not, you can provide your wallet details and request 
-        funds from the user. Before executing your first action, get the wallet details to see what network 
-        you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. If someone 
-        asks you to do something you can't do with your currently available tools, you must say so, and 
-        encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to 
-        docs.cdp.coinbase.com for more information. Be concise and helpful with your responses. Refrain from 
-        restating your tools' descriptions unless it is explicitly requested.
-        `,
+        You are a helpful agent that can interact with EVM chains using 0xGasless smart accounts. You can perform 
+        gasless transactions using the account abstraction wallet. You can check balances of ETH and any ERC20 token 
+        by providing their contract address. If someone asks you to do something you can't do with your currently 
+        available tools, you must say so. Be concise and helpful with your responses.
+      `,
     });
 
     // Save wallet data
@@ -122,9 +103,11 @@ async function initializeAgent() {
     return { agent, config: agentConfig };
   } catch (error) {
     console.error("Failed to initialize agent:", error);
-    throw error; // Re-throw to be handled by caller
+    throw error;
   }
 }
+
+// For runAutonomousMode, runChatMode, chooseMode and main functions, reference:
 
 /**
  * Run the agent autonomously with specified intervals
@@ -133,7 +116,8 @@ async function initializeAgent() {
  * @param config - Agent configuration
  * @param interval - Time interval between actions in seconds
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+//biome-ignore lint/suspicious/noExplicitAny: <explanation>
 async function runAutonomousMode(agent: any, config: any, interval = 10) {
   console.log("Starting autonomous mode...");
 
@@ -171,7 +155,7 @@ async function runAutonomousMode(agent: any, config: any, interval = 10) {
  * @param agent - The agent executor
  * @param config - Agent configuration
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+//biome-ignore lint/suspicious/noExplicitAny: <explanation>
 async function runChatMode(agent: any, config: any) {
   console.log("Starting chat mode... Type 'exit' to end.");
 
@@ -184,7 +168,6 @@ async function runChatMode(agent: any, config: any) {
     new Promise(resolve => rl.question(prompt, resolve));
 
   try {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const userInput = await question("\nPrompt: ");
 

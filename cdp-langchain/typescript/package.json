@@ -1,5 +1,5 @@
 {
-  "name": "@coinbase/cdp-langchain",
+  "name": "@0xgas/langchain",
   "version": "0.0.12",
   "description": "Langchain Toolkit extension of CDP Agentkit",
   "repository": "https://github.com/coinbase/cdp-agentkit-nodejs",
@@ -25,7 +25,7 @@
     "prepack": "tsc",
     "docs": "npx --yes typedoc --entryPoints ./src --entryPointStrategy expand --exclude ./src/tests/**/*.ts",
     "docs:serve": "http-server ./docs",
-    "dev": "tsc --watch"
+    "dev": "bun link && concurrently \"tsc --watch\""
   },
   "keywords": [
     "coinbase",
@@ -41,9 +41,13 @@
   ],
   "dependencies": {
     "@coinbase/cdp-agentkit-core": "^0.0.11",
+    "@0xgas/agentkit-core": "link:@0xgas/agentkit-core",
     "@coinbase/coinbase-sdk": "^0.13.0",
     "@langchain/core": "^0.3.19",
     "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   },
   "peerDependencies": {
     "@coinbase/coinbase-sdk": "^0.13.0"

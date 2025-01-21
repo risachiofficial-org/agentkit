@@ -49,7 +49,7 @@ export async function getBalance(
 /**
  * Get wallet balance action.
  */
-export class GetBalanceAction implements CdpAction<typeof GetBalanceInput> {
+export class GetCDPBalanceAction implements CdpAction<typeof GetBalanceInput> {
   public name = "get_balance";
   public description = GET_BALANCE_PROMPT;
   public argsSchema = GetBalanceInput;
