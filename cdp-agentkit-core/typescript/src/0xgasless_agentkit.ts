@@ -126,7 +126,7 @@ export class Agentkit {
     }
 
     // For functions that require smart account
-    if (paramCount > 1) {
+    if (paramCount > 1 && action.smartAccountRequired) {
       if (!this.smartAccount) {
         return `Unable to run Action: ${action.name}. A Smart Account is required. Please configure Agentkit with a Wallet to run this action.`;
       }
