@@ -25,6 +25,11 @@ export interface AgentkitAction<TActionSchema extends ActionSchemaAny> {
   argsSchema: TActionSchema;
 
   /**
+   * Indicates whether a smart account is required for this action
+   */
+  smartAccountRequired?: boolean;
+
+  /**
    * The function to execute for this action
    */
   func:

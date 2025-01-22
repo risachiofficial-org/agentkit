@@ -1,6 +1,6 @@
 import { z } from "zod";
 import * as viem from "viem";
-import { generatePrivateKey, mnemonicToAccount } from "viem/accounts";
+import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
 import { ZeroXgaslessSmartAccount, createSmartAccountClient } from "@0xgasless/smart-account";
 import { AgentkitAction, ActionSchemaAny } from "./actions/0xgasless/agentkit_action";
 import { avalanche, base, metis, moonbeam, fantom, bsc, Chain } from "viem/chains";
@@ -8,18 +8,19 @@ import { avalanche, base, metis, moonbeam, fantom, bsc, Chain } from "viem/chain
 /**
  * Configuration options for the Agentkit
  */
-interface AgentkitOptions {
-  apiKey: string;
+export interface PublicAgentOptions {
   chainID: number;
-  privateKey?: `0x${string}`;
+  rpcUrl?: string;
 }
 
 /**
- * Configuration options for the Agentkit with a Wallet.
+ * Configuration options for the Agentkit with a Smart Account
  */
-interface ConfigureAgentkitWithWalletOptions extends AgentkitOptions {
+export interface SmartAgentOptions extends PublicAgentOptions {
   mnemonicPhrase?: string;
   accountPath?: number;
+  privateKey?: `0x${string}`;
+  apiKey: string;
 }
 
 export const Chains: Record<number, Chain> = {
@@ -32,91 +33,73 @@ export const Chains: Record<number, Chain> = {
 };
 
 export class Agentkit {
-  private wallet?: viem.WalletClient;
+  private publicClient: viem.PublicClient;
   private smartAccount?: ZeroXgaslessSmartAccount;
 
   /**
-   * Initializes a new Agentkit instance
+   * Initializes a new Agentkit instance with a public client
    *
    * @param config - Configuration options for the Agentkit
    */
-  public constructor(config: AgentkitOptions) {
-    if (!config.apiKey || config.apiKey === "") {
-      throw new Error("API_KEY is required but not provided");
-    }
-    if (!config.privateKey) {
-      config.privateKey = generatePrivateKey();
-    }
-
+  public constructor(config: PublicAgentOptions) {
     if (!Chains[config.chainID]) {
       throw new Error(`Chain ID ${config.chainID} is not supported`);
     }
 
-    // Configure viem wallet
-    this.wallet = viem
-      .createWalletClient({
-        account: config.privateKey,
-        chain: Chains[config.chainID],
-        transport: viem.http(),
-      })
-      .extend(viem.publicActions);
-
-    const bundlerUrl = `https://bundler.0xgasless.com/${config.chainID}`;
-    const paymasterUrl = `https://paymaster.0xgasless.com/v1/${config.chainID}/rpc/${config.apiKey}`;
-    createSmartAccountClient({
-      bundlerUrl,
-      paymasterUrl,
-      chainId: config.chainID,
-      signer: this.wallet,
-    })
-      .then(client => {
-        this.smartAccount = client;
-      })
-      .catch(error => {
-        throw new Error(`Failed to create smart account client: ${error}`);
-      });
+    // Configure public client
+    this.publicClient = viem.createPublicClient({
+      chain: Chains[config.chainID],
+      transport: config.rpcUrl ? viem.http(config.rpcUrl) : viem.http(),
+    });
   }
 
   /**
-   * Configures Agentkit with a Wallet.
+   * Configures Agentkit with a Smart Account for gasless transactions
    *
-   * @param config - Optional configuration parameters
+   * @param config - Smart agent configuration parameters
    * @returns A Promise that resolves to a new Agentkit instance
-   * @throws Error if required environment variables are missing or wallet initialization fails
+   * @throws Error if required parameters are missing or initialization fails
    */
   public static async configureWithWallet(
-    config: ConfigureAgentkitWithWalletOptions,
+    config: SmartAgentOptions,
   ): Promise<Agentkit> {
+    if (!config.apiKey || config.apiKey === "") {
+      throw new Error("API_KEY is required for smart agent configuration");
+    }
+
     const agentkit = new Agentkit(config);
 
-    const mnemonicPhrase = config.mnemonicPhrase || process.env.MNEMONIC_PHRASE;
     try {
-      if (config.walletData) {
-        const walletData = JSON.parse(config.walletData);
-        agentkit.wallet = viem.createWalletClient({
-          account: walletData.privateKey,
-          chain: baseSepolia,
-          transport: viem.http(),
-        });
-      } else if (mnemonicPhrase) {
-        // Create wallet from mnemonic
-        const account = await mnemonicToAccount(mnemonicPhrase);
-        agentkit.wallet = viem.createWalletClient({
-          account,
-          chain: baseSepolia,
-          transport: viem.http(),
-        });
+      let account: viem.Account;
+      
+      if (config.privateKey) {
+        account = privateKeyToAccount(config.privateKey);
+      } else if (config.mnemonicPhrase) {
+        account = mnemonicToAccount(config.mnemonicPhrase, { accountIndex: config.accountPath || 0 });
       } else {
-        // Create new wallet
-        const privateKey = generatePrivateKey();
-        agentkit.wallet = viem.createWalletClient({
-          account: privateKey,
-          chain: baseSepolia,
-          transport: viem.http(),
-        });
+        throw new Error("Either privateKey or mnemonicPhrase must be provided");
       }
+
+      // Create wallet client
+      const wallet = viem.createWalletClient({
+        account,
+        chain: Chains[config.chainID],
+        transport: viem.http(),
+      });
+
+      // Configure smart account
+      const bundlerUrl = `https://bundler.0xgasless.com/${config.chainID}`;
+      const paymasterUrl = `https://paymaster.0xgasless.com/v1/${config.chainID}/rpc/${config.apiKey}`;
+      
+      agentkit.smartAccount = await createSmartAccountClient({
+        bundlerUrl,
+        paymasterUrl,
+        chainId: config.chainID,
+        signer: wallet,
+      });
+
     } catch (error) {
-      throw new Error(`Failed to initialize wallet: ${error}`);
+      throw new Error(`Failed to initialize smart account: ${error}`);
     }
 
     return agentkit;
@@ -134,31 +117,41 @@ export class Agentkit {
     action: AgentkitAction<TActionSchema>,
     args: TActionSchema,
   ): Promise<string> {
-    if (action.func.length > 1) {
-      if (!this.wallet) {
-        return `Unable to run Action: ${action.name}. A Wallet is required. Please configure Agentkit with a Wallet to run this action.`;
-      }
+    // Check function parameter count to determine execution path
+    const paramCount = action.func.length;
 
-      return await action.func(this.wallet, args);
+    // For functions that only take args (no client/wallet)
+    if (paramCount === 1) {
+      return await (action.func as (args: TActionSchema) => Promise<string>)(args);
     }
 
-    return await (action.func as (args: z.infer<TActionSchema>) => Promise<string>)(args);
+    // For functions that require smart account
+    if (paramCount > 1) {
+      if (!this.smartAccount) {
+        return `Unable to run Action: ${action.name}. A Smart Account is required. Please configure Agentkit with a Wallet to run this action.`;
+      }
+      return await (action.func as (account: ZeroXgaslessSmartAccount, args: TActionSchema) => Promise<string>)(
+        this.smartAccount,
+        args
+      );
+    }
+
+    return await (action.func as (client: viem.PublicClient, args: TActionSchema) => Promise<string>)(
+      this.publicClient,
+      args
+    );
   }
 
   /**
-   * Exports wallet data required to re-instantiate the wallet
-   *
-   * @returns JSON string of wallet data including address and private key
+   * Gets the smart account address if configured
+   * 
+   * @returns The smart account address
+   * @throws Error if smart account is not configured
    */
-  async exportWallet(): Promise<string> {
-    if (!this.wallet) {
-      throw Error("Unable to export wallet. Agentkit is not configured with a wallet.");
+  async getAddress(): Promise<string> {
+    if (!this.smartAccount) {
+      throw new Error("Smart account not configured");
     }
-
-    const address = await this.wallet.getAddresses();
-    return JSON.stringify({
-      address,
-      privateKey: "",
-    });
+    return await this.smartAccount.getAddress();
   }
 }

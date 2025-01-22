@@ -12,7 +12,7 @@ The token will be deployed using the wallet's default address as the owner and i
 /**
  * Input schema for deploy token action.
  */
-export const DeployTokenInput = z
+export const DeploySmartTokenInput = z
   .object({
     name: z.string().describe("The name of the token"),
     symbol: z.string().describe("The token symbol"),
@@ -27,9 +27,9 @@ export const DeployTokenInput = z
  * @param args - The input arguments for the action.
  * @returns A message containing the deployed token contract address and details.
  */
-export async function deployToken(
+export async function deploySmartToken(
   wallet: ZeroXgaslessSmartAccount,
-  args: z.infer<typeof DeployTokenInput>,
+  args: z.infer<typeof DeploySmartTokenInput>,
 ): Promise<string> {
   try {
     // Encode constructor parameters with the contract bytecode
@@ -67,9 +67,10 @@ export async function deployToken(
 /**
  * Deploy token action.
  */
-export class DeployTokenAction implements AgentkitAction<typeof DeployTokenInput> {
+export class DeploySmartTokenAction implements AgentkitAction<typeof DeploySmartTokenInput> {
   public name = "deploy_token";
   public description = DEPLOY_TOKEN_PROMPT;
-  public argsSchema = DeployTokenInput;
-  public func = deployToken;
+  public argsSchema = DeploySmartTokenInput;
+  public smartAccountRequired = true;
+  public func = deploySmartToken;
 }
