@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { WalletClient } from "viem";
+import { PublicClient } from "viem";
+import { ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export type ActionSchemaAny = z.ZodObject<any, any, any, any>;
@@ -27,6 +28,7 @@ export interface AgentkitAction<TActionSchema extends ActionSchemaAny> {
    * The function to execute for this action
    */
   func:
-    | ((wallet: WalletClient, args: z.infer<TActionSchema>) => Promise<string>)
+    | ((wallet: PublicClient, args: z.infer<TActionSchema>) => Promise<string>)
+    | ((wallet: ZeroXgaslessSmartAccount, args: z.infer<TActionSchema>) => Promise<string>)
     | ((args: z.infer<TActionSchema>) => Promise<string>);
 }
