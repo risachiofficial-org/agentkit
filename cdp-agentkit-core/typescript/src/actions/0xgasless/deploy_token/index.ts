@@ -1,7 +1,12 @@
-import { ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
+import { PaymasterMode, ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
 import { z } from "zod";
-import { bytecode, abi } from "./constants";
-import { encodeDeployData } from "viem";
+import {
+  TokenBytecode,
+  DeployerContractABI as DEPLOYER_ABI,
+  DeployerContractAddress as DEPLOYER_ADDRESS,
+  TokenABI,
+} from "./constants";
+import { encodeDeployData, encodeFunctionData, keccak256, stringToHex } from "viem";
 import { AgentkitAction } from "../agentkit_action";
 
 const DEPLOY_TOKEN_PROMPT = `
@@ -32,28 +37,44 @@ export async function deploySmartToken(
   args: z.infer<typeof DeploySmartTokenInput>,
 ): Promise<string> {
   try {
+    // Create a unique salt based on token name and symbol
+    const salt = keccak256(stringToHex(`${args.name}${args.symbol}${Date.now()}`));
+
     // Encode constructor parameters with the contract bytecode
-    const deployData = encodeDeployData({
-      abi,
-      bytecode,
+    const creationCode = encodeDeployData({
+      abi: TokenABI,
+      bytecode: TokenBytecode,
       args: [args.name, args.symbol],
+    });
+
+    // Encode the deploy function call
+    const data = encodeFunctionData({
+      abi: DEPLOYER_ABI,
+      functionName: "deploy",
+      args: [salt, creationCode],
     });
 
     // Create transaction object
     const tx = {
-      to: "0x", // Empty address for contract deployment
-      data: deployData,
-      value: 0n, // No ETH value being sent
+      to: DEPLOYER_ADDRESS,
+      data,
+      value: 0n,
     };
 
     // Send deployment transaction
-    const txResponse = await wallet.sendTransaction(tx);
+    const txResponse = await wallet.sendTransaction(tx, {
+      paymasterServiceData: {
+        mode: PaymasterMode.SPONSORED,
+      },
+      // gasOffset: {
+      //   callGasLimitOffsetPct: 25,
+      // 	verificationGasLimitOffsetPct: 25, // 25% increase
+      // 	preVerificationGasOffsetPct: 9.8, // 9.80% increase
+      // },
+    });
+
     const result = await txResponse.wait();
-    if (!result.success) {
-      return `Error deploying token: ${result.reason}`;
-    }
     const receipt = result.receipt;
-    console.log(receipt);
     const hash = receipt.transactionHash;
     if (!hash) {
       return `Error deploying token: No transaction hash found`;

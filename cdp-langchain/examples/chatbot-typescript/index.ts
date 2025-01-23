@@ -1,11 +1,11 @@
 import { Agentkit } from "@0xgas/agentkit-core";
+import { SmartAgentOptions } from "@0xgas/agentkit-core/dist/0xgasless_agentkit";
 import { AgentkitToolkit } from "@0xgas/langchain";
 import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import * as dotenv from "dotenv";
-import * as fs from "fs";
 import * as readline from "readline";
 
 dotenv.config();
@@ -17,8 +17,8 @@ function validateEnvironment(): void {
     "OPENROUTER_API_KEY",
     "PRIVATE_KEY",
     "RPC_URL",
-    "PAYMASTER_URL",
-    "BUNDLER_URL"
+    "API_KEY",
+    "CHAIN_ID"
   ];
   
   requiredVars.forEach(varName => {
@@ -42,36 +42,23 @@ function validateEnvironment(): void {
 
 validateEnvironment();
 
-const WALLET_DATA_FILE = "wallet_data.txt";
 
 async function initializeAgent() {
   try {
     const llm = new ChatOpenAI({
-      model: "gpt-4",
+      model: "gpt-4o",
       openAIApiKey: process.env.OPENROUTER_API_KEY,
       configuration: {
         baseURL: "https://openrouter.ai/api/v1"
       }
     });
 
-    let walletDataStr: string | undefined = undefined;
-
-    if (fs.existsSync(WALLET_DATA_FILE)) {
-      try {
-        walletDataStr = fs.readFileSync(WALLET_DATA_FILE, "utf8");
-      } catch (error) {
-        console.error("Error reading wallet data:", error);
-      }
-    }
-
     // Configure 0xGasless AgentKit
-    const config = {
+    const config: SmartAgentOptions = {
       privateKey: process.env.PRIVATE_KEY as `0x${string}`,
       rpcUrl: process.env.RPC_URL,
-      paymasterUrl: process.env.PAYMASTER_URL,
-      bundlerUrl: process.env.BUNDLER_URL,
-      chainId: Number(process.env.CHAIN_ID) || 84532, // Base Sepolia
-      walletData: walletDataStr
+      apiKey: process.env.API_KEY as string,
+      chainID: Number(process.env.CHAIN_ID) || 8453, // Base Sepolia
     };
 
     // Initialize 0xGasless AgentKit
@@ -95,10 +82,6 @@ async function initializeAgent() {
         available tools, you must say so. Be concise and helpful with your responses.
       `,
     });
-
-    // Save wallet data
-    const exportedWallet = await agentkit.exportWallet();
-    fs.writeFileSync(WALLET_DATA_FILE, exportedWallet);
 
     return { agent, config: agentConfig };
   } catch (error) {
@@ -237,13 +220,13 @@ async function chooseMode(): Promise<"chat" | "auto"> {
 async function main() {
   try {
     const { agent, config } = await initializeAgent();
-    const mode = await chooseMode();
+    // const mode = await chooseMode();
 
-    if (mode === "chat") {
-      await runChatMode(agent, config);
-    } else {
-      await runAutonomousMode(agent, config);
-    }
+    await runChatMode(agent, config);
+    // if (mode === "chat") {
+    // } else {
+    //   await runAutonomousMode(agent, config);
+    // }
   } catch (error) {
     if (error instanceof Error) {
       console.error("Error:", error.message);

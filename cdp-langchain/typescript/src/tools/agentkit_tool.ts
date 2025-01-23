@@ -30,20 +30,20 @@ export class AgentkitTool<TActionSchema extends ActionSchemaAny> extends Structu
   public description: string;
 
   /**
-   * The CDP Agentkit instance
+   * The Agentkit instance
    */
   private agentkit: Agentkit;
 
   /**
-   * The CDP Action
+   * The Agentkit Action
    */
   private action: AgentkitAction<TActionSchema>;
 
   /**
-   * Constructor for the CDP Tool class
+   * Constructor for the Agentkit Tool class
    *
-   * @param action - The CDP action to execute
-   * @param agentkit - The CDP wrapper to use
+   * @param action - The Agentkit action to execute
+   * @param agentkit - The Agentkit wrapper to use
    */
   constructor(action: AgentkitAction<TActionSchema>, agentkit: Agentkit) {
     super();
@@ -55,11 +55,11 @@ export class AgentkitTool<TActionSchema extends ActionSchemaAny> extends Structu
   }
 
   /**
-   * Executes the CDP action with the provided input
+   * Executes the Agentkit action with the provided input
    *
    * @param input - An object containing either instructions or schema-validated arguments
-   * @returns A promise that resolves to the result of the CDP action
-   * @throws {Error} If the CDP action fails
+   * @returns A promise that resolves to the result of the Agentkit action
+   * @throws {Error} If the Agentkit action fails
    */
   protected async _call(
     input: z.infer<typeof this.schema> & Record<string, unknown>,

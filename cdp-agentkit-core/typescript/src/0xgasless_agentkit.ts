@@ -84,7 +84,7 @@ export class Agentkit {
       const wallet = viem.createWalletClient({
         account,
         chain: Chains[config.chainID],
-        transport: viem.http(),
+        transport: config.rpcUrl ? viem.http(config.rpcUrl) : viem.http(),
       });
 
       // Configure smart account
