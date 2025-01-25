@@ -28,17 +28,6 @@
     "dev": "bun link && concurrently \"tsc --watch\"",
     "build:types": "tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json"
   },
-  "keywords": [
-    "0xgasless",
-    "sdk",
-    "crypto",
-    "cdp",
-    "agentkit",
-    "ai",
-    "agent",
-    "nodejs",
-    "typescript"
-  ],
   "dependencies": {
     "@0xgasless/smart-account": "^0.0.13",
     "viem": "2",

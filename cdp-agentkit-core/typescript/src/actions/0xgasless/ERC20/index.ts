@@ -1,4 +1,4 @@
-import { PaymasterMode, ZeroXgaslessSmartAccount } from "@0xgasless/dev-account";
+import { PaymasterMode, ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
 import { z } from "zod";
 import {
   TokenBytecode,
