@@ -1,7 +1,9 @@
 import { AgentkitAction } from "./agentkit_action";
-import { ZeroXgaslessSmartAccount } from "@0xgasless/dev-account";
+import { ZeroXgaslessSmartAccount, Transaction } from "@0xgasless/dev-account";
 import { z } from "zod";
 import { parseEther, parseUnits, encodeFunctionData } from "viem";
+import { TokenABI } from "./ERC20/constants";
+import { sendTransaction } from "./services";
 
 const SMART_TRANSFER_PROMPT = `
 This tool will transfer an asset from the wallet to another onchain address using gasless transactions.
@@ -12,35 +14,22 @@ It takes the following inputs:
 - destination: Where to send the funds (must be a valid onchain address)
 
 Important notes:
-- Gasless transfers are only available on supported networks
-- For ERC20 tokens, ensure you have sufficient balance and allowance
-- For native ETH transfers, ensure sufficient balance for the transfer
+- Gasless transfers are only available on supported networks: Avalanche C-Chain, Metis chain, BASE, BNB chain, FANTOM, Moonbeam 
 `;
-
-const ERC20_ABI = [
-  {
-    name: "transfer",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "recipient", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-  },
-] as const;
 
 /**
  * Input schema for smart transfer action.
  */
 export const SmartTransferInput = z
   .object({
-    amount: z.string().describe("The amount to transfer"),
-    tokenAddress: z.string().describe("The token address or 'eth' for native transfers"),
-    destination: z.string().describe("The destination address"),
+    amount: z.string().describe("The amount of tokens to transfer"),
+    tokenAddress: z
+      .string()
+      .describe("The token contract address or 'eth' for native ETH transfers"),
+    destination: z.string().describe("The recipient address"),
   })
   .strip()
-  .describe("Instructions for transferring assets");
+  .describe("Instructions for transferring tokens from a smart account to an onchain address");
 
 /**
  * Transfers assets using gasless transactions.
@@ -55,7 +44,7 @@ export async function smartTransfer(
 ): Promise<string> {
   try {
     const isEth = args.tokenAddress.toLowerCase() === "eth";
-    let tx: { to: string; data: string; value: bigint };
+    let tx: Transaction;
 
     if (isEth) {
       // Native ETH transfer
@@ -66,10 +55,18 @@ export async function smartTransfer(
       };
     } else {
       // ERC20 token transfer
+      const decimals = await wallet.rpcProvider.readContract({
+        abi: TokenABI,
+        address: args.tokenAddress as `0x${string}`,
+        functionName: "decimals",
+      });
       const data = encodeFunctionData({
-        abi: ERC20_ABI,
+        abi: TokenABI,
         functionName: "transfer",
-        args: [args.destination as `0x${string}`, parseUnits(args.amount, 18)],
+        args: [
+          args.destination as `0x${string}`,
+          parseUnits(args.amount, (decimals as number) || 18),
+        ],
       });
 
       tx = {
@@ -79,9 +76,7 @@ export async function smartTransfer(
       };
     }
 
-    const request = await wallet.sendTransaction(tx);
-    const txResponse = await request.wait();
-    const receipt = await txResponse.receipt;
+    const receipt = await sendTransaction(wallet, tx);
 
     return `Successfully transferred ${args.amount} ${
       isEth ? "ETH" : `tokens from contract ${args.tokenAddress}`
@@ -100,4 +95,4 @@ export class SmartTransferAction implements AgentkitAction<typeof SmartTransferI
   public argsSchema = SmartTransferInput;
   public func = smartTransfer;
   public smartAccountRequired = true;
-} 
+}
