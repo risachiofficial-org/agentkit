@@ -54,7 +54,7 @@ export async function swap(
     
     // Get token decimals
     const fromDecimals = isFromEth ? 18 : await getDecimals(wallet, args.fromTokenAddress);
-    const amountIn = parseUnits(args.amount, fromDecimals);
+    const amountIn = parseUnits(args.amount, Number(fromDecimals));
 
     // 1. Get Route Data
     const routeURL = `https://aggregator-api.kyberswap.com/${chainId}/api/v1/routes`;

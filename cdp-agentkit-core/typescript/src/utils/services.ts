@@ -1,5 +1,5 @@
 import { ZeroXgaslessSmartAccount, Transaction, PaymasterMode } from "@0xgasless/dev-account";
-import { TokenABI } from "./ERC20/constants";
+import { TokenABI } from "./constants";
 
 export async function sendTransaction(wallet: ZeroXgaslessSmartAccount, tx: Transaction) {
   const request = await wallet.sendTransaction(tx, {
@@ -17,6 +17,6 @@ export async function getDecimals(wallet: ZeroXgaslessSmartAccount, tokenAddress
     abi: TokenABI,
     address: tokenAddress as `0x${string}`,
     functionName: "decimals",
-  });
+  }) as bigint;
   return decimals;
 }
