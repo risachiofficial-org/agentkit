@@ -1,4 +1,4 @@
-import { PaymasterMode, ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
+import { PaymasterMode, ZeroXgaslessSmartAccount } from "@0xgasless/dev-account";
 import { z } from "zod";
 import {
   TokenBytecode,
@@ -66,11 +66,12 @@ export async function deploySmartToken(
       paymasterServiceData: {
         mode: PaymasterMode.SPONSORED,
       },
-      // gasOffset: {
-      //   callGasLimitOffsetPct: 25,
-      // 	verificationGasLimitOffsetPct: 25, // 25% increase
-      // 	preVerificationGasOffsetPct: 9.8, // 9.80% increase
-      // },
+      gasOffset: {
+        // Increase gas limits to account for smart wallet overhead
+        callGasLimitOffsetPct: 150, // 50% increase
+        verificationGasLimitOffsetPct: 150, // 50% increase
+        preVerificationGasOffsetPct: 120, // 20% increase
+      },
     });
 
     const result = await txResponse.wait();

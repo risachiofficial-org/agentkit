@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PublicClient } from "viem";
-import { ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
+import { ZeroXgaslessSmartAccount } from "@0xgasless/dev-account";
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export type ActionSchemaAny = z.ZodObject<any, any, any, any>;
