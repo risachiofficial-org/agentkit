@@ -3,7 +3,7 @@ import { ZeroXgaslessSmartAccount, Transaction } from "@0xgasless/dev-account";
 import { z } from "zod";
 import { parseEther, parseUnits, encodeFunctionData } from "viem";
 import { TokenABI } from "./ERC20/constants";
-import { sendTransaction } from "./services";
+import { sendTransaction } from "~/utils/services";
 
 const SMART_TRANSFER_PROMPT = `
 This tool will transfer an asset from the wallet to another onchain address using gasless transactions.

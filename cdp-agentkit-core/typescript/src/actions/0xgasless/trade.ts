@@ -1,5 +1,6 @@
-import { CdpAction } from "./cdp_action";
-import { Wallet, Amount } from "@coinbase/coinbase-sdk";
+import { AgentkitAction } from "./agentkit_action";
+import type { ZeroXgaslessSmartAccount, Transaction } from "@0xgasless/dev-account";
+
 import { z } from "zod";
 
 const TRADE_PROMPT = `
@@ -21,7 +22,7 @@ Important notes:
  */
 export const TradeInput = z
   .object({
-    amount: z.custom<Amount>().describe("The amount of the from asset to trade"),
+    amount: z.custom<bigint>().describe("The amount of the from asset to trade"),
     fromAssetId: z.string().describe("The from asset ID to trade"),
     toAssetId: z.string().describe("The to asset ID to receive from the trade"),
   })
