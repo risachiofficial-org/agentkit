@@ -1,9 +1,9 @@
 {
-  "name": "@0xgas/agentkit-core",
-  "description": "CDP Agentkit core primitives",
-  "repository": "https://github.com/coinbase/cdp-agentkit-nodejs",
-  "version": "0.0.12",
-  "author": "Coinbase Inc.",
+  "name": "@0xgasless/agentkit-core",
+  "description": "0xGasless Agentkit core primitives",
+  "repository": "https://github.com/0xgasless/agentkit-core",
+  "version": "0.0.1",
+  "author": "0xgasless Inc.",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
     "build:types": "tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json"
   },
   "keywords": [
-    "coinbase",
+    "0xgasless",
     "sdk",
     "crypto",
     "cdp",
@@ -40,10 +40,7 @@
     "typescript"
   ],
   "dependencies": {
-    "@0xgasless/smart-account": "^0.0.11",
-    "@0xgasless/dev-account": "^0.0.11",
-    "@coinbase/coinbase-sdk": "^0.14.1",
-    "twitter-api-v2": "^1.18.2",
+    "@0xgasless/smart-account": "^0.0.13",
     "viem": "2",
     "zod": "^3.23.8"
   },

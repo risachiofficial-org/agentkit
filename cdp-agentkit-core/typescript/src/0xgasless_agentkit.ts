@@ -1,7 +1,7 @@
 import { z } from "zod";
 import * as viem from "viem";
 import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
-import { ZeroXgaslessSmartAccount, createSmartAccountClient } from "@0xgasless/dev-account";
+import { ZeroXgaslessSmartAccount, createSmartAccountClient } from "@0xgasless/smart-account";
 import { AgentkitAction, ActionSchemaAny } from "./actions/0xgasless/agentkit_action";
 import { avalanche, base, metis, moonbeam, fantom, bsc, Chain } from "viem/chains";
 

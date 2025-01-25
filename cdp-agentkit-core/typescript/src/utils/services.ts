@@ -1,4 +1,4 @@
-import { ZeroXgaslessSmartAccount, Transaction, PaymasterMode } from "@0xgasless/dev-account";
+import { ZeroXgaslessSmartAccount, Transaction, PaymasterMode } from "@0xgasless/smart-account";
 import { TokenABI } from "./constants";
 
 export async function sendTransaction(wallet: ZeroXgaslessSmartAccount, tx: Transaction) {

@@ -1,5 +1,5 @@
 import { AgentkitAction } from "./agentkit_action";
-import { ZeroXgaslessSmartAccount } from "@0xgasless/dev-account";
+import { ZeroXgaslessSmartAccount } from "@0xgasless/smart-account";
 import { z } from "zod";
 import { parseUnits, encodeFunctionData } from "viem";
 import { TokenABI } from "./ERC20/constants";
